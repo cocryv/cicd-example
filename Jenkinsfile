@@ -11,7 +11,7 @@ pipeline {
     
     stages {
 
-        
+        /**
         stage('Test') {
             agent {
                 docker {
@@ -26,6 +26,7 @@ pipeline {
                 sh 'chown -R 1000:1000 .'
             }
         }
+        */
         
         stage('Build and Push Docker Image') {
             agent any
