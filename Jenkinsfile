@@ -34,10 +34,14 @@ pipeline {
                     // Construire l'image avec le format correct
                     sh "docker build -t ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
                     
-                    withCredentials([string(credentialsId: 'docker-registry-creds', variable: 'DOCKER_PWD')]) {
-                            sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_REGISTRY_USER} --password-stdin"
-                            sh "docker push ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
-                        }
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-registry-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PWD'
+                    )]) {
+                        sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_USER} --password-stdin"
+                        sh "docker push ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                    }
                 }
             }
         }
