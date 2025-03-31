@@ -16,7 +16,7 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.11-slim'
-                    args '-u jenkins:jenkins -v ${WORKSPACE}:/app -w /app'
+                    args '-u root:root -v ${WORKSPACE}:/app -w /app'
                 }
             }
             steps {
