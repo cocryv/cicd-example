@@ -34,16 +34,10 @@ pipeline {
                     // Construire l'image avec le format correct
                     sh "docker build -t ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
                     
-                    // Vérification si nous sommes sur une branche qui nécessite un push
-                    if (env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'main' || env.BRANCH_NAME ==~ /release\/.*/) {
-                        withCredentials([string(credentialsId: 'docker-registry-creds', variable: 'DOCKER_PWD')]) {
+                    withCredentials([string(credentialsId: 'docker-registry-creds', variable: 'DOCKER_PWD')]) {
                             sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_REGISTRY_USER} --password-stdin"
                             sh "docker push ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                         }
-                    }else{
-                        echo "No push required for this branch"
-                        echo "Branch name: ${env.BRANCH_NAME}"
-                    }
                 }
             }
         }
