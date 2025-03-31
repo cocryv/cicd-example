@@ -2,6 +2,7 @@ pipeline {
     agent {
         docker {
             image 'python:3.11-slim'
+            args '-u root:root'  // Exécuter en tant que root pour éviter les problèmes de permissions
         }
     }
     
@@ -14,7 +15,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh 'pip install -r requirements.txt'
+                sh 'pip install --no-cache-dir -r requirements.txt'
             }
         }
         
