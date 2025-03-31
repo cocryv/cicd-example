@@ -11,7 +11,7 @@ pipeline {
     
     stages {
 
-        /**
+        
         stage('Test') {
             agent {
                 docker {
@@ -20,13 +20,12 @@ pipeline {
                 }
             }
             steps {
-                checkout scm
                 sh 'pip install --no-cache-dir -r requirements.txt'
                 sh 'python -m pytest tests/'
                 sh 'chown -R 1000:1000 .'
             }
         }
-        */
+        
         
         stage('Build and Push Docker Image') {
             agent any
