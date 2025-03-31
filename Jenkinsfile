@@ -2,9 +2,11 @@ pipeline {
     agent none
     
     environment {
-        DOCKER_REGISTRY = 'https://hub.docker.com/'
+        // Pour Docker Hub, on utilise simplement le nom d'utilisateur comme préfixe
+        DOCKER_REGISTRY_USER = 'valentincocry'  // Remplacez par votre utilisateur Docker Hub
         IMAGE_NAME = 'python-app'
-        IMAGE_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
+        // Utilisation de BUILD_NUMBER uniquement si BRANCH_NAME n'est pas disponible
+        IMAGE_TAG = "${env.BRANCH_NAME ?: 'main'}-${env.BUILD_NUMBER}"
     }
     
     stages {
@@ -12,7 +14,7 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.11-slim'
-                    args '-u root:root'  // Exécuter en tant que root pour éviter les problèmes de permissions
+                    args '-u root:root'
                 }
             }
             steps {
@@ -23,18 +25,18 @@ pipeline {
         }
         
         stage('Build and Push Docker Image') {
-            agent any  // Utilise un nœud Jenkins avec Docker installé
+            agent any
             steps {
                 checkout scm
                 script {
-                    // Construire l'image
-                    sh "docker build -t ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
+                    // Construire l'image avec le format correct
+                    sh "docker build -t ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
                     
-                    // Pousser l'image si on est sur les branches concernées
+                    // Vérification si nous sommes sur une branche qui nécessite un push
                     if (env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'main' || env.BRANCH_NAME ==~ /release\/.*/) {
                         withCredentials([string(credentialsId: 'docker-registry-creds', variable: 'DOCKER_PWD')]) {
-                            sh "echo ${DOCKER_PWD} | docker login ${env.DOCKER_REGISTRY} -u user --password-stdin"
-                            sh "docker push ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                            sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_REGISTRY_USER} --password-stdin"
+                            sh "docker push ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                         }
                     }
                 }
