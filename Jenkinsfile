@@ -16,7 +16,7 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.11-slim'
-                    args '-u root:root -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock'
+                    args '-u root:root -v ${WORKSPACE}:/app -w /app -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
             steps {
