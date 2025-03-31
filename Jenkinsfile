@@ -11,15 +11,6 @@ pipeline {
     
     stages {
 
-        stage('Setup and Clean') {
-            steps {
-                // Nettoyage initial pour éviter les problèmes de permissions
-                sh 'rm -rf .git/config.lock || true'
-                sh 'chmod -R 777 . || true'  // Permissions pour tous les fichiers existants
-                checkout scm  // Checkout après nettoyage
-            }
-        }
-
         
         stage('Test') {
             agent {
