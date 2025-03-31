@@ -16,13 +16,12 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.11-slim'
-                    args '-u root:root -v ${WORKSPACE}:/app -w /app -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock'
+                    args '-u jenkins:jenkins -v ${WORKSPACE}:/app -w /app'
                 }
             }
             steps {
                 sh 'pip install --no-cache-dir -r requirements.txt'
                 sh 'python -m pytest tests/'
-                sh 'chown -R 1000:1000 .'
             }
         }
         
