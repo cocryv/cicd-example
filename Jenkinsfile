@@ -10,13 +10,13 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                sh 'sudo pip install -r requirements.txt'  // Éviter l'option --user si pas de problème de permission
+                sh 'sudo python3 -m pip install -r requirements.txt'  // Éviter l'option --user si pas de problème de permission
             }
         }
 
         stage('Test') {
             steps {
-                sh 'python -m pytest tests/'
+                sh 'python3 -m pytest tests/'
             }
         }
 
