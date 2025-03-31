@@ -1,25 +1,29 @@
 pipeline {
-    agent any  // Si Jenkins n'est pas dans un conteneur Docker
-
+    agent {
+        docker {
+            image 'python:3.11-slim'
+        }
+    }
+    
     environment {
         DOCKER_REGISTRY = 'https://hub.docker.com/'
         IMAGE_NAME = 'python-app'
         IMAGE_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
     }
-
+    
     stages {
         stage('Setup') {
             steps {
-                sh 'sudo python3 -m pip install -r requirements.txt'  // Éviter l'option --user si pas de problème de permission
+                sh 'sudo pip install -r requirements.txt'
             }
         }
-
+        
         stage('Test') {
             steps {
-                sh 'python3 -m pytest tests/'
+                sh 'python -m pytest tests/'
             }
         }
-
+        
         stage('Build Docker Image') {
             steps {
                 script {
@@ -27,7 +31,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Push Docker Image') {
             when {
                 anyOf {
@@ -43,7 +47,7 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy to Dev') {
             when {
                 branch 'develop'
@@ -51,10 +55,13 @@ pipeline {
             steps {
                 sh '''
                 echo "Deploying to DEV environment"
+                # Ici vous pouvez ajouter les commandes pour déployer sur dev
+                # Exemple avec kubectl:
+                # kubectl set image deployment/app app=${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG} --namespace=dev
                 '''
             }
         }
-
+        
         stage('Deploy to Test') {
             when {
                 branch pattern: 'release/*', comparator: 'REGEXP'
@@ -62,26 +69,30 @@ pipeline {
             steps {
                 sh '''
                 echo "Deploying to TEST environment"
+                # Ici vous pouvez ajouter les commandes pour déployer sur test
                 '''
             }
         }
-
+        
         stage('Deploy to Production') {
             when {
                 branch 'main'
             }
             steps {
+                // Ajoutez une étape d'approbation manuelle pour la prod
                 input message: 'Déployer en production?', ok: 'Oui'
                 
                 sh '''
                 echo "Deploying to PRODUCTION environment"
+                # Ici vous pouvez ajouter les commandes pour déployer sur prod
                 '''
             }
         }
     }
-
+    
     post {
         always {
+            // Nettoyage
             sh 'docker system prune -f'
             deleteDir()
         }
