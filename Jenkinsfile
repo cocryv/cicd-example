@@ -14,13 +14,14 @@ pipeline {
             agent {
                 docker {
                     image 'python:3.11-slim'
-                    args '-u root:root'
+                    args '-u root:root -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
             steps {
                 checkout scm
                 sh 'pip install --no-cache-dir -r requirements.txt'
                 sh 'python -m pytest tests/'
+                sh 'chown -R 1000:1000 .'
             }
         }
         
@@ -92,8 +93,10 @@ pipeline {
         always {
             // Nettoyage
             node(null) {
+                // Utiliser une approche plus sûre pour le nettoyage
+                sh 'chmod -R 777 . || true'
                 sh 'docker system prune -f || true'
-                deleteDir()
+                cleanWs() // Au lieu de deleteDir()
             }
         }
         success {
