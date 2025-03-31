@@ -40,6 +40,9 @@ pipeline {
                             sh "echo ${DOCKER_PWD} | docker login -u ${DOCKER_REGISTRY_USER} --password-stdin"
                             sh "docker push ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
                         }
+                    }else{
+                        echo "No push required for this branch"
+                        echo "Branch name: ${env.BRANCH_NAME}"
                     }
                 }
             }
