@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.11-slim'
-            args '-u root:root'  // Exécuter en tant que root pour éviter les problèmes de permissions
-        }
-    }
+    agent none
     
     environment {
         DOCKER_REGISTRY = 'https://hub.docker.com/'
@@ -13,43 +8,41 @@ pipeline {
     }
     
     stages {
-        stage('Setup') {
-            steps {
-                sh 'pip install --no-cache-dir -r requirements.txt'
-            }
-        }
-        
         stage('Test') {
+            agent {
+                docker {
+                    image 'python:3.11-slim'
+                    args '-u root:root'  // Exécuter en tant que root pour éviter les problèmes de permissions
+                }
+            }
             steps {
+                checkout scm
+                sh 'pip install --no-cache-dir -r requirements.txt'
                 sh 'python -m pytest tests/'
             }
         }
         
-        stage('Build Docker Image') {
+        stage('Build and Push Docker Image') {
+            agent any  // Utilise un nœud Jenkins avec Docker installé
             steps {
+                checkout scm
                 script {
-                    app = docker.build("${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}")
-                }
-            }
-        }
-        
-        stage('Push Docker Image') {
-            when {
-                anyOf {
-                    branch 'develop';
-                    branch 'main';
-                    branch pattern: 'release/*', comparator: 'REGEXP'
-                }
-            }
-            steps {
-                withCredentials([string(credentialsId: 'docker-registry-creds', variable: 'DOCKER_PWD')]) {
-                    sh "echo ${DOCKER_PWD} | docker login ${env.DOCKER_REGISTRY} -u user --password-stdin"
-                    sh "docker push ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                    // Construire l'image
+                    sh "docker build -t ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
+                    
+                    // Pousser l'image si on est sur les branches concernées
+                    if (env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'main' || env.BRANCH_NAME ==~ /release\/.*/) {
+                        withCredentials([string(credentialsId: 'docker-registry-creds', variable: 'DOCKER_PWD')]) {
+                            sh "echo ${DOCKER_PWD} | docker login ${env.DOCKER_REGISTRY} -u user --password-stdin"
+                            sh "docker push ${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                        }
+                    }
                 }
             }
         }
         
         stage('Deploy to Dev') {
+            agent any
             when {
                 branch 'develop'
             }
@@ -64,6 +57,7 @@ pipeline {
         }
         
         stage('Deploy to Test') {
+            agent any
             when {
                 branch pattern: 'release/*', comparator: 'REGEXP'
             }
@@ -76,6 +70,7 @@ pipeline {
         }
         
         stage('Deploy to Production') {
+            agent any
             when {
                 branch 'main'
             }
@@ -94,8 +89,10 @@ pipeline {
     post {
         always {
             // Nettoyage
-            sh 'docker system prune -f'
-            deleteDir()
+            node(null) {
+                sh 'docker system prune -f || true'
+                deleteDir()
+            }
         }
         success {
             echo 'Pipeline terminé avec succès!'
