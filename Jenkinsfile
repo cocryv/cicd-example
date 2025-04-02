@@ -24,6 +24,30 @@ pipeline {
                 sh 'python -m pytest tests/'
             }
         }
+
+        stage('Load Test') {
+            agent {
+                docker {
+                    image 'python:3.11-slim'
+                    args '-u root:root -v ${WORKSPACE}:/app -w /app'
+                }
+            }
+            steps {
+                sh '''
+                    pip install --no-cache-dir -r requirements.txt
+                    pip install locust
+                    python -m flask run --host=0.0.0.0 &
+                    sleep 5  # Attendre que Flask démarre
+                    locust --host=http://localhost:5000 --headless -u 10 -r 2 --run-time 30s --html load-test-report.html --only-summary
+                '''
+            }
+            post {
+                always {
+                    // Archiver le rapport de test
+                    archiveArtifacts artifacts: 'load-test-report.html', fingerprint: true
+                }
+            }
+        }
         
         
         stage('Build and Push Docker Image') {
