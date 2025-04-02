@@ -74,18 +74,36 @@ pipeline {
             }
         }
         
-        stage('Deploy to Production') {
+       stage('Deploy to Production') {
             agent any
             when {
                 branch 'main'
             }
             steps {
-                // Ajoutez une étape d'approbation manuelle pour la prod
+                // Étape d'approbation manuelle pour la prod
                 input message: 'Déployer en production?', ok: 'Oui'
                 
                 sh '''
-                echo "Deploying to PRODUCTION environment"
-                # Ici vous pouvez ajouter les commandes pour déployer sur prod
+                    echo "Deploying to PRODUCTION environment"
+                    
+                    # Arrêter et supprimer l'ancien conteneur s'il existe
+                    docker stop python-app-prod || true
+                    docker rm python-app-prod || true
+                    
+                    # Pull la dernière image (optionnel car l'image est déjà sur la machine)
+                    docker pull ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                    
+                    # Démarrer le nouveau conteneur
+                    docker run -d \\
+                        --name python-app-prod \\
+                        -p 8080:8080 \\
+                        --restart unless-stopped \\
+                        ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                        
+                    # Vérifier que le conteneur est bien démarré
+                    docker ps | grep python-app-prod
+                    
+                    echo "Deployment to production completed successfully"
                 '''
             }
         }
