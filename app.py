@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.route('/')
 def hello_world():
     return jsonify({
-        'message': 'Hello DevOps World!',
+        'message': 'Hello DevOps World ! ! !',
         'status': 'success',
         'environment': app.config.get('ENVIRONMENT', 'development')
     })
