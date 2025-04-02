@@ -91,7 +91,7 @@ pipeline {
                     # Démarrer le nouveau conteneur
                     docker run -d \\
                         --name python-app-prod \\
-                        -p 8080:8080 \\
+                        -p 5000:5000 \\
                         --restart unless-stopped \\
                         ${DOCKER_REGISTRY_USER}/${IMAGE_NAME}:${IMAGE_TAG}
                         
