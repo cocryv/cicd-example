@@ -76,12 +76,7 @@ pipeline {
         
        stage('Deploy to Production') {
             agent any
-            when {
-                branch 'main'
-            }
             steps {
-                // Étape d'approbation manuelle pour la prod
-                input message: 'Déployer en production?', ok: 'Oui'
                 
                 sh '''
                     echo "Deploying to PRODUCTION environment"
